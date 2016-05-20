@@ -87,7 +87,9 @@ disconnect(Connection) ->
 
 %% @doc Insert a document or multiple documents into a collection.
 %%      Returns the document or documents with an auto-generated _id if missing.
--spec insert(pid(), collection(), list() | map() | bson:document()) -> {{boolean(), map()}, list()}.
+-spec insert(pid(), collection(), bson:document()) -> {{boolean(), map()}, bson:document()};
+			(pid(), collection(), map()) -> {{boolean(), map()}, map()};
+			(pid(), collection(), list()) -> {{boolean(), map()}, list()}.
 insert(Connection, Coll, Doc) when is_tuple(Doc); is_map(Doc) ->
   {Res, [UDoc | _]} = insert(Connection, Coll, [Doc]),
   {Res, UDoc};
@@ -95,7 +97,9 @@ insert(Connection, Coll, Docs) ->
   Converted = prepare(Docs, fun assign_id/1),
   {command(Connection, {<<"insert">>, Coll, <<"documents">>, Converted}), Converted}.
 
--spec insert(pid(), collection(), list() | map() | bson:document(), bson:document()) -> {{boolean(), map()}, list()}.
+-spec insert(pid(), collection(), bson:document(), bson:document()) -> {{boolean(), map()}, bson:document()};
+			(pid(), collection(), map(), bson:document()) -> {{boolean(), map()}, map()};
+			(pid(), collection(), list(), bson:document()) -> {{boolean(), map()}, list()}.
 insert(Connection, Coll, Doc, WC) when is_tuple(Doc); is_map(Doc) ->
   {Res, [UDoc | _]} = insert(Connection, Coll, [Doc], WC),
   {Res, UDoc};
@@ -104,19 +108,19 @@ insert(Connection, Coll, Docs, WC) ->
   {command(Connection, {<<"insert">>, Coll, <<"documents">>, Converted, <<"writeConcern">>, WC}), Converted}.
 
 %% @doc Replace the document matching criteria entirely with the new Document.
--spec update(pid(), collection(), selector(), map()) -> {boolean(), map()}.
+-spec update(pid(), collection(), selector(), map() | bson:document()) -> {boolean(), map()}.
 update(Connection, Coll, Selector, Doc) ->
   update(Connection, Coll, Selector, Doc, false, false).
 
 %% @doc Replace the document matching criteria entirely with the new Document.
--spec update(pid(), collection(), selector(), map(), boolean(), boolean()) -> {boolean(), map()}.
+-spec update(pid(), collection(), selector(), map() | bson:document(), boolean(), boolean()) -> {boolean(), map()}.
 update(Connection, Coll, Selector, Doc, Upsert, MultiUpdate) ->
   Converted = prepare(Doc, fun(D) -> D end),
   command(Connection, {<<"update">>, Coll, <<"updates">>,
     [#{<<"q">> => Selector, <<"u">> => Converted, <<"upsert">> => Upsert, <<"multi">> => MultiUpdate}]}).
 
 %% @doc Replace the document matching criteria entirely with the new Document.
--spec update(pid(), collection(), selector(), map(), boolean(), boolean(), bson:document()) -> {boolean(), map()}.
+-spec update(pid(), collection(), selector(), map() | bson:document(), boolean(), boolean(), bson:document()) -> {boolean(), map()}.
 update(Connection, Coll, Selector, Doc, Upsert, MultiUpdate, WC) ->
   Converted = prepare(Doc, fun(D) -> D end),
   command(Connection, {<<"update">>, Coll, <<"updates">>,
